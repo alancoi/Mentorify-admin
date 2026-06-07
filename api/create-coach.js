@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { nombre, email, password, plan = 'basico' } = req.body;
+  const { nombre, email, password, plan = 'basico', valor_plan = 0 } = req.body;
 
   if (!nombre || !email || !password) {
     return res.status(400).json({ error: "Missing fields" });
@@ -71,7 +71,9 @@ export default async function handler(req, res) {
         nombre,
         email,
         plan: plan,
-        plan_limite: planLimits[plan] || 20
+        plan_limite: planLimits[plan] || 20,
+        valor_plan: parseFloat(valor_plan) || 0,
+        fecha_creacion: new Date().toISOString()
       }]);
 
     if (insertError) {

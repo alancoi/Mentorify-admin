@@ -107,11 +107,11 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   }
 
-  async function updateCoach(coachId, nombre, email, fecha_creacion) {
+  async function updateCoach(coachId, nombre, email, fecha_creacion, valor_plan) {
     try {
       const { error } = await supabase
         .from('coaches')
-        .update({ nombre, email, fecha_creacion })
+        .update({ nombre, email, fecha_creacion, valor_plan: parseFloat(valor_plan) || 0 })
         .eq('id', coachId);
       if (error) throw error;
       alert('✅ Coach actualizado');
@@ -317,7 +317,8 @@ export default function AdminDashboard({ user, onLogout }) {
                         setEditData({ 
                   nombre: coach.nombre, 
                   email: coach.email,
-                  fecha_creacion: coach.fecha_creacion ? coach.fecha_creacion.split('T')[0] : ''
+                  fecha_creacion: coach.fecha_creacion ? coach.fecha_creacion.split('T')[0] : '',
+                  valor_plan: coach.valor_plan || ''
                 });
                         setShowEditModal(true);
                       }}
@@ -363,6 +364,11 @@ export default function AdminDashboard({ user, onLogout }) {
                   onChange={(e) => setEditData({...editData, email: e.target.value})} />
               </div>
               <div className="form-group">
+                <label>💰 Valor del plan ($)</label>
+                <input type="number" placeholder="Ej: 5000" value={editData.valor_plan}
+                  onChange={(e) => setEditData({...editData, valor_plan: e.target.value})} />
+              </div>
+              <div className="form-group">
                 <label>📅 Fecha de inicio</label>
                 <input type="date" value={editData.fecha_creacion}
                   onChange={(e) => setEditData({...editData, fecha_creacion: e.target.value})} />
@@ -386,7 +392,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
             <div className="modal-actions" style={{ padding: '0 1.5rem 1.5rem' }}>
               <button onClick={() => setShowEditModal(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email, editData.fecha_creacion)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
+              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email, editData.fecha_creacion, editData.valor_plan)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
             </div>
           </div>
         </div>
