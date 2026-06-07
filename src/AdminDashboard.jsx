@@ -12,6 +12,12 @@ export default function AdminDashboard({ user, onLogout }) {
   const [editingCoach, setEditingCoach] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const PLAN_CONFIG = {
+    basico: { limite: 20, color: '#6B7280', label: 'Básico' },
+    medio: { limite: 50, color: '#F59E0B', label: 'Medio' },
+    pro: { limite: 100, color: '#8B5CF6', label: 'Pro' }
+  };
+
   useEffect(() => {
     loadCoaches();
   }, []);
@@ -20,14 +26,12 @@ export default function AdminDashboard({ user, onLogout }) {
     try {
       setLoading(true);
       
-      // Obtener coaches
       const { data: coachesData, error: coachesError } = await supabase
         .from('coaches')
         .select('*');
       
       if (coachesError) throw coachesError;
 
-      // Para cada coach, contar alumnos e ingresos
       let totalAlumnos = 0;
       let totalIngresos = 0;
 
@@ -42,6 +46,8 @@ export default function AdminDashboard({ user, onLogout }) {
 
           const alumnoCount = alumnos?.length || 0;
           const ingresos = alumnos?.reduce((sum, a) => sum + (a.plan_precio || 0), 0) || 0;
+          const plan = coach.plan || 'basico';
+          const planLimite = PLAN_CONFIG[plan]?.limite || 20;
 
           totalAlumnos += alumnoCount;
           totalIngresos += ingresos;
@@ -50,6 +56,9 @@ export default function AdminDashboard({ user, onLogout }) {
             ...coach,
             alumnoCount,
             ingresos,
+            plan,
+            planLimite,
+            porcentajeUso: Math.round((alumnoCount / planLimite) * 100)
           };
         })
       );
@@ -85,10 +94,7 @@ export default function AdminDashboard({ user, onLogout }) {
     if (!window.confirm('¿Eliminar este coach? Se eliminarán todos sus datos.')) return;
 
     try {
-      // Eliminar alumnos del coach
       await supabase.from('alumnos').delete().eq('coach_id', coachId);
-
-      // Eliminar coach
       const { error } = await supabase.from('coaches').delete().eq('id', coachId);
       if (error) throw error;
 
@@ -153,38 +159,63 @@ export default function AdminDashboard({ user, onLogout }) {
             <tr>
               <th>Nombre</th>
               <th>Email</th>
+              <th>Plan</th>
               <th>Alumnos</th>
               <th>Ingresos</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCoaches.map((coach) => (
-              <tr key={coach.id}>
-                <td>{coach.nombre}</td>
-                <td>{coach.email}</td>
-                <td className="text-center">{coach.alumnoCount}</td>
-                <td className="text-right">${coach.ingresos?.toFixed(2)}</td>
-                <td className="actions">
-                  <button
-                    onClick={() => {
-                      setSelectedCoach(coach);
-                      loadCoachAlumnos(coach.id);
-                      setShowAlumnosModal(true);
-                    }}
-                    className="btn-small btn-info"
-                  >
-                    👥 Ver alumnos
-                  </button>
-                  <button
-                    onClick={() => deleteCoach(coach.id)}
-                    className="btn-small btn-danger"
-                  >
-                    🗑️ Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filteredCoaches.map((coach) => {
+              const planConfig = PLAN_CONFIG[coach.plan] || PLAN_CONFIG.basico;
+              return (
+                <tr key={coach.id}>
+                  <td>{coach.nombre}</td>
+                  <td>{coach.email}</td>
+                  <td>
+                    <span 
+                      className="plan-badge"
+                      style={{ backgroundColor: planConfig.color }}
+                    >
+                      {planConfig.label} ({coach.alumnoCount}/{coach.planLimite})
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <div className="alumnos-progress">
+                      <span>{coach.alumnoCount}/{coach.planLimite}</span>
+                      <div className="progress-bar">
+                        <div 
+                          className="progress-fill"
+                          style={{ 
+                            width: `${Math.min(coach.porcentajeUso, 100)}%`,
+                            backgroundColor: coach.porcentajeUso > 90 ? '#d32f2f' : planConfig.color
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="text-right">${coach.ingresos?.toFixed(2)}</td>
+                  <td className="actions">
+                    <button
+                      onClick={() => {
+                        setSelectedCoach(coach);
+                        loadCoachAlumnos(coach.id);
+                        setShowAlumnosModal(true);
+                      }}
+                      className="btn-small btn-info"
+                    >
+                      👥 Ver alumnos
+                    </button>
+                    <button
+                      onClick={() => deleteCoach(coach.id)}
+                      className="btn-small btn-danger"
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
