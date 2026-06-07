@@ -146,10 +146,8 @@ export default function AdminDashboard({ user, onLogout }) {
       setFormData({ nombre: '', email: '', password: '', plan: 'basico' });
       setShowCreateModal(false);
       
-      // Force refresh immediately
-      setTimeout(() => {
-        loadCoaches();
-      }, 500);
+      // Force immediate refresh
+      window.location.reload();
     } catch (err) {
       alert('❌ Error: ' + err.message);
     }
