@@ -1,16 +1,30 @@
-# React + Vite
+# 🛡️ Mentorify Admin Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Panel administrativo exclusivo para gestionar todos los coaches de Mentorify.
 
-Currently, two official plugins are available:
+## ✨ Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- ✅ Login seguro (solo 2 admins autorizados)
+- ✅ Tabla de todos los coaches
+- ✅ Ver alumnos por coach
+- ✅ Estadísticas globales (coaches, alumnos, ingresos)
+- ✅ Editar/eliminar coaches
+- ✅ Búsqueda y filtros
+- ✅ Diseño responsive
 
-## React Compiler
+## 🔐 Acceso
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Solo con estos emails:
+- alancoimieres@gmail.com
+- appmentorify@gmail.com
 
-## Expanding the ESLint configuration
+## 🚀 Deploy en Vercel
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Conecta este repo a Vercel
+2. Variables de entorno (automáticas desde Supabase)
+3. Deploy ✅
+
+## 📊 URL
+
+- Local: http://localhost:5173
+- Production: mentorify-admin.vercel.app (próximamente)
