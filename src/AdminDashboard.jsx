@@ -107,11 +107,11 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   }
 
-  async function updateCoach(coachId, nombre, email) {
+  async function updateCoach(coachId, nombre, email, fecha_creacion) {
     try {
       const { error } = await supabase
         .from('coaches')
-        .update({ nombre, email })
+        .update({ nombre, email, fecha_creacion })
         .eq('id', coachId);
       if (error) throw error;
       alert('✅ Coach actualizado');
@@ -314,7 +314,11 @@ export default function AdminDashboard({ user, onLogout }) {
                     <button
                       onClick={() => {
                         setSelectedCoach(coach);
-                        setEditData({ nombre: coach.nombre, email: coach.email });
+                        setEditData({ 
+                  nombre: coach.nombre, 
+                  email: coach.email,
+                  fecha_creacion: coach.fecha_creacion ? coach.fecha_creacion.split('T')[0] : ''
+                });
                         setShowEditModal(true);
                       }}
                       className="btn-small btn-edit"
@@ -358,13 +362,31 @@ export default function AdminDashboard({ user, onLogout }) {
                 <input type="email" value={editData.email}
                   onChange={(e) => setEditData({...editData, email: e.target.value})} />
               </div>
-              <p style={{ fontSize: '12px', color: '#999', marginTop: '0.5rem' }}>
+              <div className="form-group">
+                <label>📅 Fecha de inicio</label>
+                <input type="date" value={editData.fecha_creacion}
+                  onChange={(e) => setEditData({...editData, fecha_creacion: e.target.value})} />
+              </div>
+              {editData.fecha_creacion && (
+                <div className="vencimiento-preview">
+                  <span>📆 Vencimiento calculado: </span>
+                  <strong>
+                    {(() => {
+                      const d = new Date(editData.fecha_creacion);
+                      d.setDate(d.getDate() + 30);
+                      return d.toLocaleDateString('es-AR');
+                    })()}
+                  </strong>
+                  <span style={{color:'#999', fontSize:'11px'}}> (inicio + 30 días)</span>
+                </div>
+              )}
+              <p style={{ fontSize: '12px', color: '#999', marginTop: '0.75rem' }}>
                 * Para cambiar el plan o el valor, usá el botón "Plan"
               </p>
             </div>
             <div className="modal-actions" style={{ padding: '0 1.5rem 1.5rem' }}>
               <button onClick={() => setShowEditModal(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
+              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email, editData.fecha_creacion)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
             </div>
           </div>
         </div>
