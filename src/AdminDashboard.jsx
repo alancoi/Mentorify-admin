@@ -20,7 +20,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const [editCoach, setEditCoach] = useState(null);
   const [newPlan, setNewPlan] = useState('basico');
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({ nombre: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ nombre: '', email: '', password: '', plan: 'basico' });
 
   useEffect(() => {
     loadCoaches();
@@ -131,7 +131,8 @@ export default function AdminDashboard({ user, onLogout }) {
         body: JSON.stringify({
           nombre: formData.nombre,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          plan: formData.plan
         })
       });
 
@@ -141,10 +142,14 @@ export default function AdminDashboard({ user, onLogout }) {
         throw new Error(data.error || 'Error al crear coach');
       }
 
-      alert(`✅ Coach creado!\n\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nComparte estas credenciales con el coach.`);
-      setFormData({ nombre: '', email: '', password: '' });
+      alert(`✅ Coach creado!\n\nEmail: ${formData.email}\nContraseña: ${formData.password}\nPlan: ${formData.plan}`);
+      setFormData({ nombre: '', email: '', password: '', plan: 'basico' });
       setShowCreateModal(false);
-      loadCoaches();
+      
+      // Force refresh immediately
+      setTimeout(() => {
+        loadCoaches();
+      }, 500);
     } catch (err) {
       alert('❌ Error: ' + err.message);
     }
@@ -367,6 +372,26 @@ export default function AdminDashboard({ user, onLogout }) {
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
+              </div>
+              <div className="form-group">
+                <label>Plan</label>
+                <select 
+                  value={formData.plan}
+                  onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'Inter, sans-serif',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="basico">Básico (20 alumnos)</option>
+                  <option value="medio">Medio (50 alumnos)</option>
+                  <option value="pro">Pro (100 alumnos)</option>
+                </select>
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">Cancelar</button>

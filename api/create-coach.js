@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { nombre, email, password } = req.body;
+  const { nombre, email, password, plan = 'basico' } = req.body;
 
   if (!nombre || !email || !password) {
     return res.status(400).json({ error: "Missing fields" });
@@ -21,6 +21,13 @@ export default async function handler(req, res) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Plan limits
+    const planLimits = {
+      basico: 20,
+      medio: 50,
+      pro: 100
+    };
+
     // Create user with Admin API
     const { data: { user }, error: userError } = await supabase.auth.admin.createUser({
       email,
@@ -32,15 +39,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: userError.message });
     }
 
-    // Create coach record
+    // Create coach record with selected plan
     const { error: insertError } = await supabase
       .from("coaches")
       .insert([{
         user_id: user.id,
         nombre,
         email,
-        plan: "basico",
-        plan_limite: 20
+        plan: plan,
+        plan_limite: planLimits[plan] || 20
       }]);
 
     if (insertError) {
@@ -51,7 +58,8 @@ export default async function handler(req, res) {
       success: true,
       message: "Coach creado exitosamente",
       email,
-      password
+      password,
+      plan
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
