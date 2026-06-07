@@ -12,10 +12,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabaseUrl = "https://nufnlvalalandxodgcpr.supabase.co";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseKey) {
+      return res.status(500).json({ error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Create user with Admin API
     const { data: { user }, error: userError } = await supabase.auth.admin.createUser({
