@@ -610,3 +610,33 @@
   outline: none;
   border-color: #6C4DFF;
 }
+
+/* ===== LOGO HEADER ===== */
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.header-title-row h1 {
+  color: #091A48;
+  margin: 0;
+  font-size: 28px;
+}
+
+/* ===== BOTÓN EDITAR ===== */
+.btn-edit {
+  background: #6C4DFF;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #482DDB;
+  transform: translateY(-1px);
+}

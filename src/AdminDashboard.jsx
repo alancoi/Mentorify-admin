@@ -58,6 +58,8 @@ export default function AdminDashboard({ user, onLogout }) {
   const [showAlumnosModal, setShowAlumnosModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ nombre: '', email: '' });
   const [editCoach, setEditCoach] = useState(null);
   const [newPlan, setNewPlan] = useState('basico');
   const [newValor, setNewValor] = useState('');
@@ -102,6 +104,21 @@ export default function AdminDashboard({ user, onLogout }) {
       console.error('Error:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function updateCoach(coachId, nombre, email) {
+    try {
+      const { error } = await supabase
+        .from('coaches')
+        .update({ nombre, email })
+        .eq('id', coachId);
+      if (error) throw error;
+      alert('✅ Coach actualizado');
+      setShowEditModal(false);
+      loadCoaches();
+    } catch (err) {
+      alert('Error: ' + err.message);
     }
   }
 
@@ -193,7 +210,10 @@ export default function AdminDashboard({ user, onLogout }) {
     <div className="admin-dashboard">
       <div className="admin-header">
         <div className="header-brand">
-          <h1>🛡️ Panel Admin Mentorify</h1>
+          <div className="header-title-row">
+            <img src="https://i.postimg.cc/JG918Zps/2__5_.png" alt="Mentorify" className="header-logo" />
+            <h1>Panel Admin Mentorify</h1>
+          </div>
           <p className="user-email">Conectado: {user.email}</p>
         </div>
         <div className="header-actions">
@@ -294,11 +314,11 @@ export default function AdminDashboard({ user, onLogout }) {
                     <button
                       onClick={() => {
                         setSelectedCoach(coach);
-                        loadCoachAlumnos(coach.id);
-                        setShowAlumnosModal(true);
+                        setEditData({ nombre: coach.nombre, email: coach.email });
+                        setShowEditModal(true);
                       }}
-                      className="btn-small btn-info"
-                    >👥 Ver</button>
+                      className="btn-small btn-edit"
+                    >✏️ Editar</button>
                     <button
                       onClick={() => {
                         setEditCoach(coach);
@@ -318,6 +338,37 @@ export default function AdminDashboard({ user, onLogout }) {
           </tbody>
         </table>
       </div>
+
+      {/* Modal: Editar Coach */}
+      {showEditModal && selectedCoach && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>✏️ Editar Coach</h2>
+              <button onClick={() => setShowEditModal(false)} className="btn-close">✕</button>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              <div className="form-group">
+                <label>Nombre</label>
+                <input type="text" value={editData.nombre}
+                  onChange={(e) => setEditData({...editData, nombre: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" value={editData.email}
+                  onChange={(e) => setEditData({...editData, email: e.target.value})} />
+              </div>
+              <p style={{ fontSize: '12px', color: '#999', marginTop: '0.5rem' }}>
+                * Para cambiar el plan o el valor, usá el botón "Plan"
+              </p>
+            </div>
+            <div className="modal-actions" style={{ padding: '0 1.5rem 1.5rem' }}>
+              <button onClick={() => setShowEditModal(false)} className="btn-secondary">Cancelar</button>
+              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Ver alumnos */}
       {showAlumnosModal && selectedCoach && (
