@@ -29,15 +29,25 @@ export default function AdminDashboard({ user, onLogout }) {
   async function loadCoaches() {
     try {
       setLoading(true);
-      const { data: coachesData, error } = await supabase.from('coaches').select('*');
+      
+      // Force refresh by adding timestamp
+      const { data: coachesData, error } = await supabase
+        .from('coaches')
+        .select('*')
+        .order('id', { ascending: false });
+      
       if (error) throw error;
 
       let totalAlumnos = 0;
       let totalIngresos = 0;
 
       const coachesWithStats = await Promise.all(
-        coachesData.map(async (coach) => {
-          const { data: alumnos } = await supabase.from('alumnos').select('*').eq('coach_id', coach.id);
+        (coachesData || []).map(async (coach) => {
+          const { data: alumnos } = await supabase
+            .from('alumnos')
+            .select('*')
+            .eq('coach_id', coach.id);
+          
           const alumnoCount = alumnos?.length || 0;
           const ingresos = alumnos?.reduce((sum, a) => sum + (a.plan_precio || 0), 0) || 0;
           const plan = coach.plan || 'basico';
@@ -58,7 +68,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
       setCoaches(coachesWithStats);
       setStats({
-        totalCoaches: coachesData.length,
+        totalCoaches: coachesData?.length || 0,
         totalAlumnos,
         totalIngresos,
       });
