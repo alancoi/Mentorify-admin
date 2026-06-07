@@ -29,20 +29,31 @@ export default function AdminDashboard({ user, onLogout }) {
   async function loadCoaches() {
     try {
       setLoading(true);
+      console.log('Loading coaches...');
       
-      // Force refresh by adding timestamp
       const { data: coachesData, error } = await supabase
         .from('coaches')
-        .select('*')
-        .order('id', { ascending: false });
+        .select('*');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading coaches:', error);
+        throw error;
+      }
+
+      console.log('Coaches data:', coachesData);
+
+      if (!coachesData || coachesData.length === 0) {
+        setCoaches([]);
+        setStats({ totalCoaches: 0, totalAlumnos: 0, totalIngresos: 0 });
+        setLoading(false);
+        return;
+      }
 
       let totalAlumnos = 0;
       let totalIngresos = 0;
 
       const coachesWithStats = await Promise.all(
-        (coachesData || []).map(async (coach) => {
+        coachesData.map(async (coach) => {
           const { data: alumnos } = await supabase
             .from('alumnos')
             .select('*')
@@ -68,7 +79,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
       setCoaches(coachesWithStats);
       setStats({
-        totalCoaches: coachesData?.length || 0,
+        totalCoaches: coachesData.length,
         totalAlumnos,
         totalIngresos,
       });
@@ -146,8 +157,10 @@ export default function AdminDashboard({ user, onLogout }) {
       setFormData({ nombre: '', email: '', password: '', plan: 'basico' });
       setShowCreateModal(false);
       
-      // Force immediate refresh
-      window.location.reload();
+      // Refresh table after 1 second
+      setTimeout(() => {
+        loadCoaches();
+      }, 1000);
     } catch (err) {
       alert('❌ Error: ' + err.message);
     }
