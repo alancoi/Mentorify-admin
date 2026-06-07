@@ -115,21 +115,15 @@ export default function AdminDashboard({ user, onLogout }) {
         return;
       }
 
-      const response = await fetch(
-        'https://nufnlvalalandxodgcpr.supabase.co/functions/v1/create-coach',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({
-            nombre: formData.nombre,
-            email: formData.email,
-            password: formData.password
-          })
-        }
-      );
+      const response = await fetch('/api/create-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          email: formData.email,
+          password: formData.password
+        })
+      });
 
       const data = await response.json();
 
