@@ -115,27 +115,34 @@ export default function AdminDashboard({ user, onLogout }) {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password
-      });
+      const response = await fetch(
+        'https://nufnlvalalandxodgcpr.supabase.co/functions/v1/create-coach',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            nombre: formData.nombre,
+            email: formData.email,
+            password: formData.password
+          })
+        }
+      );
 
-      if (error) throw error;
+      const data = await response.json();
 
-      await supabase.from('coaches').insert([{
-        user_id: data.user.id,
-        nombre: formData.nombre,
-        email: formData.email,
-        plan: 'basico',
-        plan_limite: 20
-      }]);
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al crear coach');
+      }
 
-      alert(`✅ Coach creado!\n\nEmail: ${formData.email}\nContraseña: ${formData.password}`);
+      alert(`✅ Coach creado!\n\nEmail: ${formData.email}\nContraseña: ${formData.password}\n\nComparte estas credenciales con el coach.`);
       setFormData({ nombre: '', email: '', password: '' });
       setShowCreateModal(false);
       loadCoaches();
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('❌ Error: ' + err.message);
     }
   }
 
