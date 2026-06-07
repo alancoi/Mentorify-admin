@@ -8,10 +8,51 @@ const PLAN_CONFIG = {
   pro: { limite: 100, color: '#8B5CF6', label: 'Pro' }
 };
 
+function getDiasRestantes(fechaCreacion) {
+  if (!fechaCreacion) return null;
+  const inicio = new Date(fechaCreacion);
+  const vencimiento = new Date(inicio);
+  vencimiento.setDate(vencimiento.getDate() + 30);
+  const hoy = new Date();
+  const diff = Math.ceil((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+  return { vencimiento, diasRestantes: diff };
+}
+
+function VencimientoCell({ fechaCreacion }) {
+  const result = getDiasRestantes(fechaCreacion);
+  if (!result) return <span style={{ color: '#999' }}>—</span>;
+
+  const { vencimiento, diasRestantes } = result;
+  const fechaStr = vencimiento.toLocaleDateString('es-AR');
+
+  if (diasRestantes < 0) {
+    return (
+      <div className="vencimiento-cell vencido">
+        <span className="vencimiento-fecha">{fechaStr}</span>
+        <span className="vencimiento-badge rojo">Vencido hace {Math.abs(diasRestantes)}d</span>
+      </div>
+    );
+  }
+  if (diasRestantes <= 3) {
+    return (
+      <div className="vencimiento-cell por-vencer">
+        <span className="vencimiento-fecha">{fechaStr}</span>
+        <span className="vencimiento-badge naranja">⚠️ Vence en {diasRestantes}d</span>
+      </div>
+    );
+  }
+  return (
+    <div className="vencimiento-cell">
+      <span className="vencimiento-fecha">{fechaStr}</span>
+      <span className="vencimiento-badge verde">{diasRestantes}d restantes</span>
+    </div>
+  );
+}
+
 export default function AdminDashboard({ user, onLogout }) {
   const [coaches, setCoaches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalCoaches: 0, totalAlumnos: 0, totalIngresos: 0 });
+  const [stats, setStats] = useState({ totalCoaches: 0, totalAlumnos: 0 });
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [coachAlumnos, setCoachAlumnos] = useState([]);
   const [showAlumnosModal, setShowAlumnosModal] = useState(false);
@@ -19,58 +60,36 @@ export default function AdminDashboard({ user, onLogout }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editCoach, setEditCoach] = useState(null);
   const [newPlan, setNewPlan] = useState('basico');
+  const [newValor, setNewValor] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({ nombre: '', email: '', password: '', plan: 'basico' });
+  const [formData, setFormData] = useState({ nombre: '', email: '', password: '', plan: 'basico', valor_plan: '' });
 
-  useEffect(() => {
-    loadCoaches();
-  }, []);
+  useEffect(() => { loadCoaches(); }, []);
 
   async function loadCoaches() {
     try {
       setLoading(true);
-      console.log('Loading coaches...');
-      
-      const { data: coachesData, error } = await supabase
-        .from('coaches')
-        .select('*');
-      
-      if (error) {
-        console.error('Error loading coaches:', error);
-        throw error;
-      }
-
-      console.log('Coaches data:', coachesData);
-
+      const { data: coachesData, error } = await supabase.from('coaches').select('*');
+      if (error) throw error;
       if (!coachesData || coachesData.length === 0) {
         setCoaches([]);
-        setStats({ totalCoaches: 0, totalAlumnos: 0, totalIngresos: 0 });
+        setStats({ totalCoaches: 0, totalAlumnos: 0 });
         setLoading(false);
         return;
       }
 
       let totalAlumnos = 0;
-      let totalIngresos = 0;
 
       const coachesWithStats = await Promise.all(
         coachesData.map(async (coach) => {
-          const { data: alumnos } = await supabase
-            .from('alumnos')
-            .select('*')
-            .eq('coach_id', coach.id);
-          
+          const { data: alumnos } = await supabase.from('alumnos').select('*').eq('coach_id', coach.id);
           const alumnoCount = alumnos?.length || 0;
-          const ingresos = alumnos?.reduce((sum, a) => sum + (a.plan_precio || 0), 0) || 0;
           const plan = coach.plan || 'basico';
           const planLimite = PLAN_CONFIG[plan]?.limite || 20;
-
           totalAlumnos += alumnoCount;
-          totalIngresos += ingresos;
-
           return {
             ...coach,
             alumnoCount,
-            ingresos,
             planLimite,
             porcentajeUso: Math.round((alumnoCount / planLimite) * 100)
           };
@@ -78,11 +97,7 @@ export default function AdminDashboard({ user, onLogout }) {
       );
 
       setCoaches(coachesWithStats);
-      setStats({
-        totalCoaches: coachesData.length,
-        totalAlumnos,
-        totalIngresos,
-      });
+      setStats({ totalCoaches: coachesData.length, totalAlumnos });
     } catch (err) {
       console.error('Error:', err);
     } finally {
@@ -91,22 +106,17 @@ export default function AdminDashboard({ user, onLogout }) {
   }
 
   async function loadCoachAlumnos(coachId) {
-    try {
-      const { data } = await supabase.from('alumnos').select('*').eq('coach_id', coachId);
-      setCoachAlumnos(data || []);
-    } catch (err) {
-      console.error('Error:', err);
-    }
+    const { data } = await supabase.from('alumnos').select('*').eq('coach_id', coachId);
+    setCoachAlumnos(data || []);
   }
 
-  async function updatePlan(coachId, plan) {
+  async function updatePlan(coachId, plan, valor) {
     try {
       const planLimite = PLAN_CONFIG[plan]?.limite || 20;
       const { error } = await supabase
         .from('coaches')
-        .update({ plan, plan_limite: planLimite })
+        .update({ plan, plan_limite: planLimite, valor_plan: parseFloat(valor) || 0 })
         .eq('id', coachId);
-
       if (error) throw error;
       alert('✅ Plan actualizado');
       setShowPlanModal(false);
@@ -135,7 +145,6 @@ export default function AdminDashboard({ user, onLogout }) {
         alert('❌ Completá todos los campos');
         return;
       }
-
       const response = await fetch('/api/create-coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,48 +152,55 @@ export default function AdminDashboard({ user, onLogout }) {
           nombre: formData.nombre,
           email: formData.email,
           password: formData.password,
-          plan: formData.plan
+          plan: formData.plan,
+          valor_plan: parseFloat(formData.valor_plan) || 0
         })
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al crear coach');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Error al crear coach');
       alert(`✅ Coach creado!\n\nEmail: ${formData.email}\nContraseña: ${formData.password}\nPlan: ${formData.plan}`);
-      setFormData({ nombre: '', email: '', password: '', plan: 'basico' });
+      setFormData({ nombre: '', email: '', password: '', plan: 'basico', valor_plan: '' });
       setShowCreateModal(false);
-      
-      // Refresh table after 1 second
-      setTimeout(() => {
-        loadCoaches();
-      }, 1000);
+      setTimeout(() => loadCoaches(), 1000);
     } catch (err) {
       alert('❌ Error: ' + err.message);
     }
   }
+
+  // Coaches que vencen en ≤3 días para el stat card
+  const porVencer = coaches.filter(c => {
+    const r = getDiasRestantes(c.fecha_creacion);
+    return r && r.diasRestantes >= 0 && r.diasRestantes <= 3;
+  }).length;
 
   const filtered = coaches.filter(c =>
     c.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <div className="admin-loading">Cargando coaches...</div>;
+  // Ordenar: vencidos y por vencer primero
+  const sorted = [...filtered].sort((a, b) => {
+    const ra = getDiasRestantes(a.fecha_creacion);
+    const rb = getDiasRestantes(b.fecha_creacion);
+    const da = ra?.diasRestantes ?? 999;
+    const db = rb?.diasRestantes ?? 999;
+    return da - db;
+  });
 
-  // Debug
-  console.log('Total coaches loaded:', coaches.length);
+  if (loading) return <div className="admin-loading">Cargando coaches...</div>;
 
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
-        <div>
+        <div className="header-brand">
           <h1>🛡️ Panel Admin Mentorify</h1>
           <p className="user-email">Conectado: {user.email}</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={() => setShowCreateModal(true)} className="btn-add-coach">+ Agregar Coach</button>
+        <div className="header-actions">
+          <button onClick={() => setShowCreateModal(true)} className="btn-add-coach">
+            <span className="btn-icon">+</span>
+            Agregar Coach
+          </button>
           <button onClick={onLogout} className="btn-logout">Salir</button>
         </div>
       </div>
@@ -198,16 +214,16 @@ export default function AdminDashboard({ user, onLogout }) {
           <div className="stat-number">{stats.totalAlumnos}</div>
           <div className="stat-label">Alumnos</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-number">${stats.totalIngresos.toFixed(2)}</div>
-          <div className="stat-label">Ingresos</div>
+        <div className={`stat-card ${porVencer > 0 ? 'stat-warning' : ''}`}>
+          <div className="stat-number" style={{ color: porVencer > 0 ? '#d32f2f' : '#6C4DFF' }}>{porVencer}</div>
+          <div className="stat-label">Por vencer (≤3 días)</div>
         </div>
       </div>
 
       <div className="admin-search">
         <input
           type="text"
-          placeholder="Buscar coach..."
+          placeholder="🔍 Buscar coach por nombre o email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -222,17 +238,28 @@ export default function AdminDashboard({ user, onLogout }) {
               <th>Email</th>
               <th>Plan</th>
               <th>Alumnos</th>
-              <th>Ingresos</th>
+              <th>Valor</th>
+              <th>Inicio</th>
+              <th>Vencimiento</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((coach) => {
+            {sorted.map((coach) => {
               const planConfig = PLAN_CONFIG[coach.plan] || PLAN_CONFIG.basico;
+              const result = getDiasRestantes(coach.fecha_creacion);
+              const rowClass = result
+                ? result.diasRestantes < 0
+                  ? 'row-vencido'
+                  : result.diasRestantes <= 3
+                  ? 'row-por-vencer'
+                  : ''
+                : '';
+
               return (
-                <tr key={coach.id}>
-                  <td>{coach.nombre}</td>
-                  <td>{coach.email}</td>
+                <tr key={coach.id} className={rowClass}>
+                  <td className="td-nombre">{coach.nombre}</td>
+                  <td className="td-email">{coach.email}</td>
                   <td>
                     <span className="plan-badge" style={{ backgroundColor: planConfig.color }}>
                       {planConfig.label} ({coach.alumnoCount}/{coach.planLimite})
@@ -242,9 +269,9 @@ export default function AdminDashboard({ user, onLogout }) {
                     <div className="alumnos-progress">
                       <span>{coach.alumnoCount}/{coach.planLimite}</span>
                       <div className="progress-bar">
-                        <div 
+                        <div
                           className="progress-fill"
-                          style={{ 
+                          style={{
                             width: `${Math.min(coach.porcentajeUso, 100)}%`,
                             backgroundColor: coach.porcentajeUso > 90 ? '#d32f2f' : planConfig.color
                           }}
@@ -252,7 +279,17 @@ export default function AdminDashboard({ user, onLogout }) {
                       </div>
                     </div>
                   </td>
-                  <td className="text-right">${coach.ingresos?.toFixed(2)}</td>
+                  <td className="td-valor">
+                    {coach.valor_plan ? `$${Number(coach.valor_plan).toLocaleString('es-AR')}` : <span style={{color:'#bbb'}}>—</span>}
+                  </td>
+                  <td className="td-fecha">
+                    {coach.fecha_creacion
+                      ? new Date(coach.fecha_creacion).toLocaleDateString('es-AR')
+                      : <span style={{color:'#bbb'}}>—</span>}
+                  </td>
+                  <td>
+                    <VencimientoCell fechaCreacion={coach.fecha_creacion} />
+                  </td>
                   <td className="actions">
                     <button
                       onClick={() => {
@@ -261,23 +298,17 @@ export default function AdminDashboard({ user, onLogout }) {
                         setShowAlumnosModal(true);
                       }}
                       className="btn-small btn-info"
-                    >
-                      👥 Ver
-                    </button>
+                    >👥 Ver</button>
                     <button
                       onClick={() => {
                         setEditCoach(coach);
-                        setNewPlan(coach.plan);
+                        setNewPlan(coach.plan || 'basico');
+                        setNewValor(coach.valor_plan || '');
                         setShowPlanModal(true);
                       }}
                       className="btn-small btn-warning"
-                    >
-                      📋 Plan
-                    </button>
-                    <button
-                      onClick={() => deleteCoach(coach.id)}
-                      className="btn-small btn-danger"
-                    >
+                    >📋 Plan</button>
+                    <button onClick={() => deleteCoach(coach.id)} className="btn-small btn-danger">
                       🗑️ Eliminar
                     </button>
                   </td>
@@ -288,6 +319,7 @@ export default function AdminDashboard({ user, onLogout }) {
         </table>
       </div>
 
+      {/* Modal: Ver alumnos */}
       {showAlumnosModal && selectedCoach && (
         <div className="modal-overlay" onClick={() => setShowAlumnosModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -321,37 +353,51 @@ export default function AdminDashboard({ user, onLogout }) {
         </div>
       )}
 
+      {/* Modal: Cambiar Plan + Valor */}
       {showPlanModal && editCoach && (
         <div className="modal-overlay" onClick={() => setShowPlanModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>📋 Cambiar Plan - {editCoach.nombre}</h2>
+              <h2>📋 Plan de {editCoach.nombre}</h2>
               <button onClick={() => setShowPlanModal(false)} className="btn-close">✕</button>
             </div>
-            <div className="plan-options">
-              {Object.entries(PLAN_CONFIG).map(([key, config]) => (
-                <div
-                  key={key}
-                  className={`plan-option ${newPlan === key ? 'selected' : ''}`}
-                  onClick={() => setNewPlan(key)}
-                >
-                  <div className="plan-color" style={{ backgroundColor: config.color }} />
-                  <div className="plan-info">
-                    <strong>{config.label}</strong>
-                    <p>Hasta {config.limite} alumnos</p>
+            <div style={{ padding: '1.5rem' }}>
+              <div className="plan-options">
+                {Object.entries(PLAN_CONFIG).map(([key, config]) => (
+                  <div
+                    key={key}
+                    className={`plan-option ${newPlan === key ? 'selected' : ''}`}
+                    onClick={() => setNewPlan(key)}
+                  >
+                    <div className="plan-color" style={{ backgroundColor: config.color }} />
+                    <div className="plan-info">
+                      <strong>{config.label}</strong>
+                      <p>Hasta {config.limite} alumnos</p>
+                    </div>
+                    {newPlan === key && <span className="plan-check">✓</span>}
                   </div>
-                  {newPlan === key && <span className="plan-check">✓</span>}
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>💰 Valor del plan ($)</label>
+                <input
+                  type="number"
+                  placeholder="Ej: 5000"
+                  value={newValor}
+                  onChange={(e) => setNewValor(e.target.value)}
+                  style={{ width: '100%', padding: '0.8rem', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
             </div>
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ padding: '0 1.5rem 1.5rem' }}>
               <button onClick={() => setShowPlanModal(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={() => updatePlan(editCoach.id, newPlan)} className="btn-primary">Actualizar</button>
+              <button onClick={() => updatePlan(editCoach.id, newPlan, newValor)} className="btn-primary" style={{ width: 'auto' }}>Actualizar</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal: Crear Coach */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -362,54 +408,36 @@ export default function AdminDashboard({ user, onLogout }) {
             <form onSubmit={createCoach} style={{ padding: '1.5rem' }}>
               <div className="form-group">
                 <label>Nombre</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Juan Pérez"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                />
+                <input type="text" placeholder="Ej: Juan Pérez" value={formData.nombre}
+                  onChange={(e) => setFormData({...formData, nombre: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input
-                  type="email"
-                  placeholder="coach@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
+                <input type="email" placeholder="coach@email.com" value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Contraseña</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Compra123456"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                />
+                <input type="text" placeholder="Ej: Compra123456" value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Plan</label>
-                <select 
-                  value={formData.plan}
-                  onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.8rem',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'Inter, sans-serif',
-                    cursor: 'pointer'
-                  }}
-                >
+                <select value={formData.plan} onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                  style={{ width: '100%', padding: '0.8rem', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
                   <option value="basico">Básico (20 alumnos)</option>
                   <option value="medio">Medio (50 alumnos)</option>
                   <option value="pro">Pro (100 alumnos)</option>
                 </select>
               </div>
+              <div className="form-group">
+                <label>💰 Valor del plan ($)</label>
+                <input type="number" placeholder="Ej: 5000" value={formData.valor_plan}
+                  onChange={(e) => setFormData({...formData, valor_plan: e.target.value})} />
+              </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">Cancelar</button>
-                <button type="submit" className="btn-primary">Crear Coach</button>
+                <button type="submit" className="btn-primary" style={{ width: 'auto' }}>Crear Coach</button>
               </div>
             </form>
           </div>

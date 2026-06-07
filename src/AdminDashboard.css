@@ -478,3 +478,135 @@
     text-align: left;
   }
 }
+
+/* ===== BOTÓN AGREGAR COACH ===== */
+.btn-add-coach {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6C4DFF 0%, #482DDB 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 15px rgba(108, 77, 255, 0.35);
+  transition: all 0.25s ease;
+}
+
+.btn-add-coach:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(108, 77, 255, 0.45);
+}
+
+.btn-add-coach:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ===== HEADER ===== */
+.header-brand h1 { margin: 0; }
+.header-actions { display: flex; gap: 1rem; align-items: center; }
+
+/* ===== STAT WARNING ===== */
+.stat-card.stat-warning {
+  border: 2px solid #ffcdd2;
+  background: #fff5f5;
+}
+
+/* ===== COLUMNAS TABLA ===== */
+.td-nombre { font-weight: 600; color: #091A48; }
+.td-email { color: #555; font-size: 13px; }
+.td-valor { font-weight: 700; color: #6C4DFF; font-size: 14px; }
+.td-fecha { color: #666; font-size: 13px; }
+
+/* ===== VENCIMIENTO ===== */
+.vencimiento-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vencimiento-fecha {
+  font-size: 13px;
+  color: #444;
+}
+
+.vencimiento-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.vencimiento-badge.verde {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.vencimiento-badge.naranja {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.vencimiento-badge.rojo {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* ===== FILAS CON ALERTA ===== */
+.row-por-vencer {
+  background: #fff8e1 !important;
+}
+
+.row-por-vencer:hover {
+  background: #fff3cd !important;
+}
+
+.row-vencido {
+  background: #ffebee !important;
+}
+
+.row-vencido:hover {
+  background: #ffdde0 !important;
+}
+
+/* ===== FORM GROUP ===== */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #091A48;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #6C4DFF;
+}
