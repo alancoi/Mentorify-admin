@@ -651,3 +651,8 @@
   color: #091A48;
   margin-top: -0.25rem;
 }
+
+.stat-card.stat-danger {
+  border: 2px solid #ffcdd2;
+  background: #fff5f5;
+}

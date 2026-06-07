@@ -190,6 +190,11 @@ export default function AdminDashboard({ user, onLogout }) {
     return r && r.diasRestantes >= 0 && r.diasRestantes <= 3;
   }).length;
 
+  const vencidos = coaches.filter(c => {
+    const r = getDiasRestantes(c.fecha_creacion);
+    return r && r.diasRestantes < 0;
+  }).length;
+
   const filtered = coaches.filter(c =>
     c.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -230,13 +235,13 @@ export default function AdminDashboard({ user, onLogout }) {
           <div className="stat-number">{stats.totalCoaches}</div>
           <div className="stat-label">Coaches</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-number">{stats.totalAlumnos}</div>
-          <div className="stat-label">Alumnos</div>
-        </div>
         <div className={`stat-card ${porVencer > 0 ? 'stat-warning' : ''}`}>
-          <div className="stat-number" style={{ color: porVencer > 0 ? '#d32f2f' : '#6C4DFF' }}>{porVencer}</div>
-          <div className="stat-label">Por vencer (≤3 días)</div>
+          <div className="stat-number" style={{ color: porVencer > 0 ? '#e65100' : '#6C4DFF' }}>{porVencer}</div>
+          <div className="stat-label">⚠️ Por vencer (≤3 días)</div>
+        </div>
+        <div className={`stat-card ${vencidos > 0 ? 'stat-danger' : ''}`}>
+          <div className="stat-number" style={{ color: vencidos > 0 ? '#c62828' : '#6C4DFF' }}>{vencidos}</div>
+          <div className="stat-label">🔴 Vencidos</div>
         </div>
       </div>
 
