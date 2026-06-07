@@ -173,6 +173,9 @@ export default function AdminDashboard({ user, onLogout }) {
 
   if (loading) return <div className="admin-loading">Cargando coaches...</div>;
 
+  // Debug
+  console.log('Total coaches loaded:', coaches.length);
+
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
