@@ -21,7 +21,6 @@ export default async function handler(req, res) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Plan limits
     const planLimits = {
       basico: 20,
       medio: 50,
@@ -36,39 +35,32 @@ export default async function handler(req, res) {
       .single();
 
     if (existingCoach) {
-      return res.status(400).json({ error: "Este coach ya existe en el sistema" });
+      return res.status(400).json({ error: "Este coach ya existe" });
     }
 
-    // Try to create user in Auth
+    // Try to create or get user
     let userId = null;
-    const { data: { user }, error: userError } = await supabase.auth.admin.createUser({
+
+    // First, try to create the user
+    const { data: { user }, error: createError } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
     });
 
-    if (userError) {
-      // If user already exists in Auth, try to get the user ID
-      if (userError.message.includes("already been registered")) {
-        // User exists in Auth, but not in coaches table
-        // Get the user ID from Auth
-        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
-        
-        if (listError) {
-          return res.status(400).json({ error: "No se pudo obtener el usuario existente" });
-        }
-        
-        const existingUser = users.find(u => u.email === email);
-        if (existingUser) {
-          userId = existingUser.id;
-        } else {
-          return res.status(400).json({ error: userError.message });
-        }
-      } else {
-        return res.status(400).json({ error: userError.message });
-      }
-    } else {
+    if (user) {
       userId = user.id;
+    } else if (createError && createError.message.includes("already been registered")) {
+      // User exists, get their ID
+      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const existingUser = users?.find(u => u.email === email);
+      if (existingUser) {
+        userId = existingUser.id;
+      }
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: "No se pudo crear el usuario" });
     }
 
     // Create coach record
@@ -88,7 +80,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "Coach creado exitosamente",
       email,
       password,
       plan
