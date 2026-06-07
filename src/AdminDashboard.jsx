@@ -8,7 +8,9 @@ export default function AdminDashboard({ user, onLogout }) {
   const [stats, setStats] = useState({ totalCoaches: 0, totalAlumnos: 0, totalIngresos: 0 });
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [coachAlumnos, setCoachAlumnos] = useState([]);
-  const [showAlumnosModal, setShowAlumnosModal] = useState(false);
+  const [showEditPlanModal, setShowEditPlanModal] = useState(false);
+  const [editPlanCoach, setEditPlanCoach] = useState(null);
+  const [newPlan, setNewPlan] = useState('basico');
   const [editingCoach, setEditingCoach] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -87,6 +89,23 @@ export default function AdminDashboard({ user, onLogout }) {
       setCoachAlumnos(data);
     } catch (err) {
       console.error('Error loading alumnos:', err);
+    }
+  }
+
+  async function updateCoachPlan(coachId, plan) {
+    try {
+      const planLimite = PLAN_CONFIG[plan]?.limite || 20;
+      const { error } = await supabase
+        .from('coaches')
+        .update({ plan, plan_limite: planLimite })
+        .eq('id', coachId);
+
+      if (error) throw error;
+      loadCoaches();
+      setShowEditPlanModal(false);
+      alert('✅ Plan actualizado exitosamente');
+    } catch (err) {
+      alert('Error: ' + err.message);
     }
   }
 
@@ -207,6 +226,16 @@ export default function AdminDashboard({ user, onLogout }) {
                       👥 Ver alumnos
                     </button>
                     <button
+                      onClick={() => {
+                        setEditPlanCoach(coach);
+                        setNewPlan(coach.plan);
+                        setShowEditPlanModal(true);
+                      }}
+                      className="btn-small btn-warning"
+                    >
+                      📋 Cambiar plan
+                    </button>
+                    <button
                       onClick={() => deleteCoach(coach.id)}
                       className="btn-small btn-danger"
                     >
@@ -220,8 +249,44 @@ export default function AdminDashboard({ user, onLogout }) {
         </table>
       </div>
 
-      {/* Alumnos Modal */}
-      {showAlumnosModal && selectedCoach && (
+      {/* Edit Plan Modal */}
+      {showEditPlanModal && editPlanCoach && (
+        <div className="modal-overlay" onClick={() => setShowEditPlanModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📋 Cambiar Plan - {editPlanCoach.nombre}</h2>
+              <button onClick={() => setShowEditPlanModal(false)} className="btn-close">✕</button>
+            </div>
+
+            <div className="plan-options">
+              {Object.entries(PLAN_CONFIG).map(([planKey, config]) => (
+                <div
+                  key={planKey}
+                  className={`plan-option ${newPlan === planKey ? 'selected' : ''}`}
+                  onClick={() => setNewPlan(planKey)}
+                >
+                  <div className="plan-color" style={{ backgroundColor: config.color }}></div>
+                  <div className="plan-info">
+                    <strong>{config.label}</strong>
+                    <p>Hasta {config.limite} alumnos</p>
+                  </div>
+                  {newPlan === planKey && <span className="plan-check">✓</span>}
+                </div>
+              ))}
+            </div>
+
+            <div className="modal-actions">
+              <button onClick={() => setShowEditPlanModal(false)} className="btn-secondary">Cancelar</button>
+              <button onClick={() => updateCoachPlan(editPlanCoach.id, newPlan)} className="btn-primary">
+                Actualizar Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
         <div className="modal-overlay" onClick={() => setShowAlumnosModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
