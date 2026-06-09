@@ -656,3 +656,59 @@
   border: 2px solid #ffcdd2;
   background: #fff5f5;
 }
+
+/* ===== PANEL INGRESOS ===== */
+.ingresos-panel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 0 0 24px 0;
+}
+
+@media (max-width: 768px) {
+  .ingresos-panel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ingresos-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #f0f0f0;
+}
+
+.ingresos-card.highlight {
+  background: linear-gradient(135deg, #6C4DFF 0%, #482DDB 100%);
+  border: none;
+}
+
+.ingresos-card.highlight .ingresos-label {
+  color: rgba(255,255,255,0.8);
+}
+
+.ingresos-card.highlight .ingresos-value {
+  color: white !important;
+}
+
+.ingresos-card.danger {
+  border: 1px solid #ffcdd2;
+  background: #fff5f5;
+}
+
+.ingresos-label {
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.ingresos-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #6C4DFF;
+  line-height: 1;
+}

@@ -52,7 +52,7 @@ function VencimientoCell({ fechaCreacion }) {
 export default function AdminDashboard({ user, onLogout }) {
   const [coaches, setCoaches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalCoaches: 0, totalAlumnos: 0 });
+  const [stats, setStats] = useState({ totalCoaches: 0, totalAlumnos: 0, ingresosEsteMes: 0, ingresosMesPasado: 0, nuevosEsteMes: 0, bajas: 0 });
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [coachAlumnos, setCoachAlumnos] = useState([]);
   const [showAlumnosModal, setShowAlumnosModal] = useState(false);
@@ -99,7 +99,35 @@ export default function AdminDashboard({ user, onLogout }) {
       );
 
       setCoaches(coachesWithStats);
-      setStats({ totalCoaches: coachesData.length, totalAlumnos });
+      
+      const hoy = new Date();
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      const inicioMesPasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+      const finMesPasado = new Date(hoy.getFullYear(), hoy.getMonth(), 0, 23, 59, 59);
+
+      const ingresosEsteMes = coachesData
+        .filter(c => c.fecha_creacion && new Date(c.fecha_creacion) >= inicioMes)
+        .reduce((sum, c) => sum + (parseFloat(c.valor_plan) || 0), 0);
+
+      const ingresosMesPasado = coachesData
+        .filter(c => {
+          const f = c.fecha_creacion ? new Date(c.fecha_creacion) : null;
+          return f && f >= inicioMesPasado && f <= finMesPasado;
+        })
+        .reduce((sum, c) => sum + (parseFloat(c.valor_plan) || 0), 0);
+
+      const nuevosEsteMes = coachesData.filter(c =>
+        c.fecha_creacion && new Date(c.fecha_creacion) >= inicioMes
+      ).length;
+
+      const bajas = coachesData.filter(c => {
+        if (!c.fecha_creacion) return false;
+        const venc = new Date(c.fecha_creacion);
+        venc.setDate(venc.getDate() + 30);
+        return venc < hoy;
+      }).length;
+
+      setStats({ totalCoaches: coachesData.length, totalAlumnos, ingresosEsteMes, ingresosMesPasado, nuevosEsteMes, bajas });
     } catch (err) {
       console.error('Error:', err);
     } finally {
@@ -242,6 +270,25 @@ export default function AdminDashboard({ user, onLogout }) {
         <div className={`stat-card ${vencidos > 0 ? 'stat-danger' : ''}`}>
           <div className="stat-number" style={{ color: vencidos > 0 ? '#c62828' : '#6C4DFF' }}>{vencidos}</div>
           <div className="stat-label">🔴 Vencidos</div>
+        </div>
+      </div>
+
+      <div className="ingresos-panel">
+        <div className="ingresos-card">
+          <div className="ingresos-label">💰 Ingresos mes pasado</div>
+          <div className="ingresos-value">${stats.ingresosMesPasado.toLocaleString('es-AR')}</div>
+        </div>
+        <div className="ingresos-card highlight">
+          <div className="ingresos-label">💰 Ingresos este mes</div>
+          <div className="ingresos-value">${stats.ingresosEsteMes.toLocaleString('es-AR')}</div>
+        </div>
+        <div className="ingresos-card">
+          <div className="ingresos-label">🆕 Nuevos este mes</div>
+          <div className="ingresos-value">{stats.nuevosEsteMes}</div>
+        </div>
+        <div className={`ingresos-card ${stats.bajas > 0 ? 'danger' : ''}`}>
+          <div className="ingresos-label">📉 Bajas (vencidos)</div>
+          <div className="ingresos-value" style={{ color: stats.bajas > 0 ? '#c62828' : '#6C4DFF' }}>{stats.bajas}</div>
         </div>
       </div>
 
