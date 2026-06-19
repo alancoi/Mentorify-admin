@@ -75,7 +75,7 @@ export default function AdminDashboard({ user, onLogout }) {
       if (error) throw error;
       if (!coachesData || coachesData.length === 0) {
         setCoaches([]);
-        setStats({ totalCoaches: 0, totalAlumnos: 0 });
+        setStats({ totalCoaches: 0, totalAlumnos: 0, ingresosEsteMes: 0, ingresosMesPasado: 0, nuevosEsteMes: 0, bajas: 0 });
         setLoading(false);
         return;
       }
