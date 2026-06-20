@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         plan: plan,
         plan_limite: planLimits[plan] || 20,
         valor_plan: parseFloat(valor_plan) || 0,
-        fecha_creacion: new Date().toISOString()
+        created_at: new Date().toISOString()
       }]);
 
     if (insertError) {

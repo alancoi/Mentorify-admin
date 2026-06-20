@@ -106,23 +106,23 @@ export default function AdminDashboard({ user, onLogout }) {
       const finMesPasado = new Date(hoy.getFullYear(), hoy.getMonth(), 0, 23, 59, 59);
 
       const ingresosEsteMes = coachesData
-        .filter(c => c.fecha_creacion && new Date(c.fecha_creacion) >= inicioMes)
+        .filter(c => c.created_at && new Date(c.created_at) >= inicioMes)
         .reduce((sum, c) => sum + (parseFloat(c.valor_plan) || 0), 0);
 
       const ingresosMesPasado = coachesData
         .filter(c => {
-          const f = c.fecha_creacion ? new Date(c.fecha_creacion) : null;
+          const f = c.created_at ? new Date(c.created_at) : null;
           return f && f >= inicioMesPasado && f <= finMesPasado;
         })
         .reduce((sum, c) => sum + (parseFloat(c.valor_plan) || 0), 0);
 
       const nuevosEsteMes = coachesData.filter(c =>
-        c.fecha_creacion && new Date(c.fecha_creacion) >= inicioMes
+        c.created_at && new Date(c.created_at) >= inicioMes
       ).length;
 
       const bajas = coachesData.filter(c => {
-        if (!c.fecha_creacion) return false;
-        const venc = new Date(c.fecha_creacion);
+        if (!c.created_at) return false;
+        const venc = new Date(c.created_at);
         venc.setDate(venc.getDate() + 30);
         return venc < hoy;
       }).length;
@@ -135,11 +135,11 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   }
 
-  async function updateCoach(coachId, nombre, email, fecha_creacion, valor_plan) {
+  async function updateCoach(coachId, nombre, email, created_at, valor_plan) {
     try {
       const { error } = await supabase
         .from('coaches')
-        .update({ nombre, email, fecha_creacion, valor_plan: parseFloat(valor_plan) || 0 })
+        .update({ nombre, email, created_at, valor_plan: parseFloat(valor_plan) || 0 })
         .eq('id', coachId);
       if (error) throw error;
       alert('✅ Coach actualizado');
@@ -214,12 +214,12 @@ export default function AdminDashboard({ user, onLogout }) {
 
   // Coaches que vencen en ≤3 días para el stat card
   const porVencer = coaches.filter(c => {
-    const r = getDiasRestantes(c.fecha_creacion);
+    const r = getDiasRestantes(c.created_at);
     return r && r.diasRestantes >= 0 && r.diasRestantes <= 3;
   }).length;
 
   const vencidos = coaches.filter(c => {
-    const r = getDiasRestantes(c.fecha_creacion);
+    const r = getDiasRestantes(c.created_at);
     return r && r.diasRestantes < 0;
   }).length;
 
@@ -230,8 +230,8 @@ export default function AdminDashboard({ user, onLogout }) {
 
   // Ordenar: vencidos y por vencer primero
   const sorted = [...filtered].sort((a, b) => {
-    const ra = getDiasRestantes(a.fecha_creacion);
-    const rb = getDiasRestantes(b.fecha_creacion);
+    const ra = getDiasRestantes(a.created_at);
+    const rb = getDiasRestantes(b.created_at);
     const da = ra?.diasRestantes ?? 999;
     const db = rb?.diasRestantes ?? 999;
     return da - db;
@@ -319,7 +319,7 @@ export default function AdminDashboard({ user, onLogout }) {
           <tbody>
             {sorted.map((coach) => {
               const planConfig = PLAN_CONFIG[coach.plan] || PLAN_CONFIG.basico;
-              const result = getDiasRestantes(coach.fecha_creacion);
+              const result = getDiasRestantes(coach.created_at);
               const rowClass = result
                 ? result.diasRestantes < 0
                   ? 'row-vencido'
@@ -355,12 +355,12 @@ export default function AdminDashboard({ user, onLogout }) {
                     {coach.valor_plan ? `$${Number(coach.valor_plan).toLocaleString('es-AR')}` : <span style={{color:'#bbb'}}>—</span>}
                   </td>
                   <td className="td-fecha">
-                    {coach.fecha_creacion
-                      ? new Date(coach.fecha_creacion).toLocaleDateString('es-AR')
+                    {coach.created_at
+                      ? new Date(coach.created_at).toLocaleDateString('es-AR')
                       : <span style={{color:'#bbb'}}>—</span>}
                   </td>
                   <td>
-                    <VencimientoCell fechaCreacion={coach.fecha_creacion} />
+                    <VencimientoCell fechaCreacion={coach.created_at} />
                   </td>
                   <td className="actions">
                     <button
@@ -369,7 +369,7 @@ export default function AdminDashboard({ user, onLogout }) {
                         setEditData({ 
                   nombre: coach.nombre, 
                   email: coach.email,
-                  fecha_creacion: coach.fecha_creacion ? coach.fecha_creacion.split('T')[0] : '',
+                  created_at: coach.created_at ? coach.created_at.split('T')[0] : '',
                   valor_plan: coach.valor_plan || ''
                 });
                         setShowEditModal(true);
@@ -422,15 +422,15 @@ export default function AdminDashboard({ user, onLogout }) {
               </div>
               <div className="form-group">
                 <label>📅 Fecha de inicio</label>
-                <input type="date" value={editData.fecha_creacion}
-                  onChange={(e) => setEditData({...editData, fecha_creacion: e.target.value})} />
+                <input type="date" value={editData.created_at}
+                  onChange={(e) => setEditData({...editData, created_at: e.target.value})} />
               </div>
-              {editData.fecha_creacion && (
+              {editData.created_at && (
                 <div className="vencimiento-preview">
                   <span>📆 Vencimiento calculado: </span>
                   <strong>
                     {(() => {
-                      const d = new Date(editData.fecha_creacion);
+                      const d = new Date(editData.created_at);
                       d.setDate(d.getDate() + 30);
                       return d.toLocaleDateString('es-AR');
                     })()}
@@ -444,7 +444,7 @@ export default function AdminDashboard({ user, onLogout }) {
             </div>
             <div className="modal-actions" style={{ padding: '0 1.5rem 1.5rem' }}>
               <button onClick={() => setShowEditModal(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email, editData.fecha_creacion, editData.valor_plan)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
+              <button onClick={() => updateCoach(selectedCoach.id, editData.nombre, editData.email, editData.created_at, editData.valor_plan)} className="btn-primary" style={{ width: 'auto' }}>Guardar</button>
             </div>
           </div>
         </div>
