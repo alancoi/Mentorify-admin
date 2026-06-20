@@ -22,9 +22,9 @@ export default async function handler(req, res) {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const planLimits = {
-      basico: 20,
-      medio: 50,
-      pro: 100
+      basico: 15,
+      estandar: 50,
+      premium: 150
     };
 
     // Check if coach already exists in table
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
         nombre,
         email,
         plan: plan,
-        plan_limite: planLimits[plan] || 20,
+        student_limit: planLimits[plan] || 20,
         valor_plan: parseFloat(valor_plan) || 0,
         created_at: new Date().toISOString()
       }]);

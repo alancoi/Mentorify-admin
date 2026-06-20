@@ -3,9 +3,9 @@ import { supabase } from './supabase';
 import './AdminDashboard.css';
 
 const PLAN_CONFIG = {
-  basico: { limite: 20, color: '#6B7280', label: 'Básico' },
-  medio: { limite: 50, color: '#F59E0B', label: 'Medio' },
-  pro: { limite: 100, color: '#8B5CF6', label: 'Pro' }
+  basico: { limite: 15, color: '#6B7280', label: 'Básico' },
+  estandar: { limite: 50, color: '#F59E0B', label: 'Estándar' },
+  premium: { limite: 150, color: '#8B5CF6', label: 'Premium' }
 };
 
 function getDiasRestantes(fechaCreacion) {
@@ -556,9 +556,9 @@ export default function AdminDashboard({ user, onLogout }) {
                 <label>Plan</label>
                 <select value={formData.plan} onChange={(e) => setFormData({...formData, plan: e.target.value})}
                   style={{ width: '100%', padding: '0.8rem', border: '2px solid #e0e0e0', borderRadius: '8px', fontSize: '14px', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
-                  <option value="basico">Básico (20 alumnos)</option>
-                  <option value="medio">Medio (50 alumnos)</option>
-                  <option value="pro">Pro (100 alumnos)</option>
+                  <option value="basico">Básico (15 alumnos)</option>
+                  <option value="estandar">Estándar (50 alumnos)</option>
+                  <option value="premium">Premium (150 alumnos)</option>
                 </select>
               </div>
               <div className="form-group">
