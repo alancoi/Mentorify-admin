@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     const { error: insertError } = await supabase
       .from("coaches")
       .insert([{
-        user_id: userId,
+        id: userId,
         nombre,
         email,
         plan: plan,
