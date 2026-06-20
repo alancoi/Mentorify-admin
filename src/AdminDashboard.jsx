@@ -8,6 +8,13 @@ const PLAN_CONFIG = {
   premium: { limite: 150, color: '#8B5CF6', label: 'Premium' }
 };
 
+function getPlanByPrice(price) {
+  const valor = parseFloat(price) || 0;
+  if (valor >= 39990) return 'premium';
+  if (valor >= 29990) return 'estandar';
+  return 'basico';
+}
+
 function getDiasRestantes(fechaCreacion) {
   if (!fechaCreacion) return null;
   const inicio = new Date(fechaCreacion);
@@ -308,6 +315,7 @@ export default function AdminDashboard({ user, onLogout }) {
             <tr>
               <th>Nombre</th>
               <th>Email</th>
+              <th>Negocio</th>
               <th>Plan</th>
               <th>Alumnos</th>
               <th>Valor</th>
@@ -318,7 +326,8 @@ export default function AdminDashboard({ user, onLogout }) {
           </thead>
           <tbody>
             {sorted.map((coach) => {
-              const planConfig = PLAN_CONFIG[coach.plan] || PLAN_CONFIG.basico;
+              const actualPlan = getPlanByPrice(coach.valor_plan);
+              const planConfig = PLAN_CONFIG[actualPlan] || PLAN_CONFIG.basico;
               const result = getDiasRestantes(coach.created_at);
               const rowClass = result
                 ? result.diasRestantes < 0
@@ -332,6 +341,13 @@ export default function AdminDashboard({ user, onLogout }) {
                 <tr key={coach.id} className={rowClass}>
                   <td className="td-nombre">{coach.nombre}</td>
                   <td className="td-email">{coach.email}</td>
+                  <td className="td-negocio">
+                    {coach.nombre_negocio ? (
+                      <span style={{ fontWeight: '600', color: '#6C4DFF' }}>{coach.nombre_negocio}</span>
+                    ) : (
+                      <span style={{ color: '#bbb' }}>—</span>
+                    )}
+                  </td>
                   <td>
                     <span className="plan-badge" style={{ backgroundColor: planConfig.color }}>
                       {planConfig.label} ({coach.alumnoCount}/{coach.planLimite})
